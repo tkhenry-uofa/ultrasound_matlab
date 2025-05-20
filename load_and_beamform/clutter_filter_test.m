@@ -424,27 +424,3 @@ for i = 1:16
 
 end
 % colorbar('Position', [0.92 0.15 0.02 0.7]);
-
-
-
-%%
-
-function processed_volume = process_volume(volume,dynamic_range, threshold)
-
-    mag_volume = abs(volume); 
-
-    rf_dynamic_range = 10^(-dynamic_range/20);
-    if(exist("threshold","var"))
-        threshold_value = 10^(threshold/20);
-        mag_volume = min(mag_volume, threshold_value);   
-    end
-
-    max_value = max(mag_volume,[],"all");
-    power_volume = (mag_volume/max_value).^2;
-
-    processed_volume = 10*log10(power_volume);
-   
-    processed_volume = max(processed_volume, -dynamic_range);
-
-    % processed_volume = max(power_volume, rf_dynamic_range);
-end

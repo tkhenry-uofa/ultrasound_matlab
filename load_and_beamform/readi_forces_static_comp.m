@@ -344,25 +344,3 @@ for i = 1:readi_group_count
 
 end
 colorbar('Position', [0.92 0.15 0.02 0.7]);
-
-
-
-%%
-
-function processed_volume = process_volume(volume,dynamic_range, threshold)
-
-    mag_volume = abs(volume); 
-
-    if(exist("threshold","var"))
-
-        threshold_value = 10^(threshold/20);
-        mag_volume = min(mag_volume, threshold_value);
-    else
-        threshold_value = 1;
-    end
-
-    
-    processed_volume = 20*log10(mag_volume/threshold_value);
-    processed_volume = processed_volume - max(processed_volume,[],"all");
-    processed_volume = max(processed_volume, -dynamic_range);
-end

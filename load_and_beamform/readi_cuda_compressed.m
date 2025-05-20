@@ -271,18 +271,3 @@ colorbar;
 % 
 % 
 % end
-
-
-
-%%
-
-function processed_volume = process_volume(volume,dynamic_range, threshold)
-
-    mag_volume = abs(volume); 
-    threshold_value = 10^(threshold/20);
-    mag_volume = min(mag_volume, threshold_value);
-    
-    processed_volume = 20*log10(mag_volume/threshold_value);
-    processed_volume = processed_volume - max(processed_volume,[],"all");
-    processed_volume = max(processed_volume, -dynamic_range);
-end
