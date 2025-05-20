@@ -3,7 +3,6 @@ clear all;
 addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\matlab_lib")
 addpath('C:\Users\tkhen\source\repos\ornot\core\lib');
 addpath("C:\Users\tkhen\OneDrive\Documents\MATLAB\lab\simulations")
-path(path, "..\simulations\motion_comp")
 
 % addpath("C:\Users\tkhen\source\repos\ogl_beamforming\helpers")
 
@@ -20,7 +19,7 @@ pipe_output = '\\.\pipe\beamformer_output_fifo'; % hardcoded in the lib rn
 data_range = 0:15;
 frame_count = length(data_range);
 
-data_root = "vrs_data/readi/better_flow/";
+data_root = "../vrs_data/readi/better_flow/";
 
 % data_file_name = "250424_MN32-5_flow_6mm_static_FORCES-TxColumn";
 % data_file_name = "250424_MN32-5_flow_6mm_10_FORCES-TxColumn";
