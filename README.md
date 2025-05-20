@@ -1,3 +1,3 @@
-# mixes
+# Ultrasound MATLAB
 
-This repo contains simulation and processing code for mixes
+This repo contains code for beamforming and processing ultrasound data, along with simulating using field ii.
