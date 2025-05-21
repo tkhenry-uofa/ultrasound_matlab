@@ -1,22 +1,21 @@
-function plot_image_grid(images,title, x_range, z_range, subplot_dims)
+function plot_image_grid(images,x, z, subplot_dims, title_str)
 
-image_count = length(images);
+    figure();
+    image_count = length(images);
 
-figure();
-
-sgtitle(title,'FontSize',16);
+    if nargin == 5
+        % Main title
+        sgtitle(title_str,'FontSize',16);
+    end
 
     % Loop through the images and display each in the 2x8 grid
     for i = 1:image_count
         subplot(subplot_dims(1), subplot_dims(2), i); 
-        colormap("gray");
-        imagesc(x_range, z_range, images{i});
-        title(['Image ' num2str(i)]);
-        xlabel("Lateral (mm)");
-        ylabel("Depth (mm)");
-        axis image;
     
-    
+        plot_bmode(images{i}, x, z, sprintf('Frame %d', i));
+        xlabel('mm');
+        ylabel('mm');
     end
 
+    colorbar('Position', [0.92 0.15 0.02 0.7]);
 end

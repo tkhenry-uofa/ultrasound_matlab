@@ -79,7 +79,7 @@ cropped_data(1:tx_end_sample,:,:) = 0;
 %% Volume Setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 volume_ranges = [-30, 30; % X
-                  0, 0; % Y
+                  0,  0; % Y
                   5, 80] / 1000; % Z
 
 lateral_resolution = 0.0002;

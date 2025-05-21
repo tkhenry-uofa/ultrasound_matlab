@@ -3,13 +3,12 @@ clear all;
 addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\matlab_lib")
 addpath('C:\Users\tkhen\source\repos\ornot\core\lib');
 
-% addpath("C:\Users\tkhen\source\repos\ogl_beamforming\helpers")
 
 if isempty(matlab.project.currentProject)
     proj = openProject("../Ultrasound-Beamforming/Ultrasound-Beamforming.prj");
 end
 
-data_path   = "../real_data/vrs_data/match_filter_test/";
+data_path   = "./vrs_data/match_filter_test/";
 
 data_path = data_path + "250514_MN32-5_reso_FORCES-TxColumn/";
 data_file_name = "250514_MN32-5_reso_FORCES-TxColumn_00";
@@ -17,11 +16,6 @@ data_file_name = "250514_MN32-5_reso_FORCES-TxColumn_00";
 params_path = data_path + '250514_MN32-5_reso_FORCES-TxColumn.bp';
 
 data_file_name   = data_file_name + ".zst";
-
-pipe_name = '\\.\pipe\beamformer_data_fifo';
-smem_name = 'Local\ogl_beamformer_parameters';
-pipe_output = '\\.\pipe\beamformer_output_fifo'; % hardcoded in the lib rn
-
 data_file = fopen(data_path + data_file_name, "r");
 raw_data = fread(data_file, '*uint8');
 fclose(data_file); 
