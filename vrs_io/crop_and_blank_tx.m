@@ -20,7 +20,6 @@ function [cropped_data_cell, final_rf_dims] = crop_and_blank_tx(data_cell, bp, t
         tx_end_sample = round(2 * tx_depth * bp.sampling_frequency / bp.speed_of_sound);
         
         cropped_data(1:tx_end_sample,:,:) = 0;
-
         cropped_data_cell{i} = cropped_data;
     end
 

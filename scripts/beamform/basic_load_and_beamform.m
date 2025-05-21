@@ -22,17 +22,15 @@ bp.channel_mapping = arrays.channel_mapping;
 bp.focal_depths = arrays.focal_depths;
 
 
-total_frames = length(data_file_paths);
-frame_data = cell(1,total_frames);
-for i = 1:total_frames
+frame_count = length(data_file_paths);
+frame_data = cell(1,frame_count);
+for i = 1:frame_count
     data_file = fopen(data_file_paths(i), "r");
     raw_data = fread(data_file, '*uint8');
     data = ornot_zstd_decompress_mex(raw_data);
     frame_data{i} = reshape(data, bp.rf_raw_dim(1),bp.rf_raw_dim(2));
     fclose(data_file); 
 end
-
-
 
 sample_count = single(bp.dec_data_dim(1));
 rx_channel_count = single(bp.dec_data_dim(2));
@@ -65,24 +63,28 @@ bp.f_number = 0.5;
 
 if ~libisloaded('cuda_transfer'), loadlibrary('cuda_transfer'); end
 
-raw_images = cell(1,total_frames);
+raw_images = cell(1,frame_count);
 
-for i = 1:total_frames
+for i = 1:frame_count
     fprintf("Beamforming Image %d\n", i);
     raw_image = cuda_beamform_real(frame_data{i}, bp);
     fprintf("Done\n");
     raw_images{i} = raw_image;
 end
 
+if true, unloadlibrary('cuda_transfer'); end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Post processing 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dynamic_range = 50;
 threshold = 300;
 power_image = false;
 
 processed_image = process_volume(raw_images{1},dynamic_range,threshold,power_image).';
 
-processed_image_array = cell(1,total_frames);
-for i = 1:total_frames
+processed_image_array = cell(1,frame_count);
+for i = 1:frame_count
     processed_image_array{i} = process_volume(raw_images{i},dynamic_range,threshold,power_image).';
 end
 
@@ -92,5 +94,4 @@ colorbar;
 
 plot_image_grid(processed_image_array, x_range, z_range, [2, 2],"Sequence");
 
-if true, unloadlibrary('cuda_transfer'); end
 
