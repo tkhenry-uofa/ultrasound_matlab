@@ -158,75 +158,13 @@ processed_shifted_image = process_volume(shifted_image_raw,dynamic_range,thresho
 
 %% Plotting
 
-
 plot_image_grid(processed_low_res, [2,4],x_range, z_range, "Readi Low Resolution Images");
-
-% figure();
-% % Loop through the images and display each in the 2x8 grid
-% for i = 1:readi_group_count
-%     subplot(2, 4, i); 
-%     colormap("gray");
-%     imagesc(x_range*1000, z_range*1000,(processed_low_res{i}));
-%     title(['Image ' num2str(i)]);
-%     % xlabel("mm");
-%     % ylabel("mm");
-% 
-%     clim([-dynamic_range, 0]); 
-% 
-% 
-% end
-% colorbar('Position', [0.92 0.15 0.02 0.7]);
-
 plot_image_grid(processed_shifted_array, [2,4],x_range, z_range, "Motion Compensated Low Reolution Images");
-
-% figure();
-% 
-% % Main title
-% % sgtitle(speed_str + ' Compensated Low Resolution Images','FontSize',16);
-% sgtitle('Warped','FontSize',16);
-% 
-% % Loop through the images and display each in the 2x8 grid
-% for i = 1:readi_group_count
-%     subplot(2, 4, i); 
-%     colormap("gray");
-%     imagesc(x_range*1000, z_range*1000,(processed_shifted_array{i}));
-%     title(['Image ' num2str(i)]);
-%     xlabel("mm");
-%     ylabel("mm");
-% 
-%     clim([-dynamic_range, 0]); 
-% 
-% 
-% end
-% colorbar('Position', [0.92 0.15 0.02 0.7]);
-% 
-% figure();
-
-% sgtitle(speed_str + " Point Spread Function", 'FontSize',16)
-% sgtitle("Stationary Point Spread Function", 'FontSize',16)
 
 figure();
 subplot 121
-
 plot_bmode(forces_image, x_range, z_range, "Uncompensated FORCES")
-% colormap("gray");
-% imagesc(x_range*1000, z_range*1000, forces_image);
-% % subtitle('Uncompensated', 'FontSize',14)
-% axis("image")
-% % clim([-dynamic_range, 0]); 
-% % xlabel("Lateral Distance (mm)");
-% % ylabel("Axial Distance (mm)");
 
 subplot 122
-
 plot_bmode(processed_shifted_image, x_range, z_range, "Compensated FORCES")
-% colormap("gray");
-% imagesc(x_range*1000, z_range*1000, processed_shifted_image);
-% % subtitle('Compenstated', 'FontSize',14)
-% axis("image")
-% % clim([-dynamic_range, 0]); 
-% % xlabel("Lateral Distance (mm)");
-% % ylabel("Axial Distance (mm)");
-% 
-% colorbar('Position', [0.92 0.15 0.02 0.7]);
 
