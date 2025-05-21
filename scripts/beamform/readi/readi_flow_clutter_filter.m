@@ -2,228 +2,121 @@ clear all;
 
 addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\matlab_lib")
 addpath('C:\Users\tkhen\source\repos\ornot\core\lib');
-addpath("C:\Users\tkhen\OneDrive\Documents\MATLAB\lab\simulations")
 
-% addpath("C:\Users\tkhen\source\repos\ogl_beamforming\helpers")
 
 if isempty(matlab.project.currentProject)
     proj = openProject("../Ultrasound-Beamforming/Ultrasound-Beamforming.prj");
 end
 
-pipe_name = '\\.\pipe\beamformer_data_fifo';
-smem_name = 'Local\ogl_beamformer_parameters';
-pipe_output = '\\.\pipe\beamformer_output_fifo'; % hardcoded in the lib rn
-
 %% Data loading
+data_path_root = "vrs_data/readi/better_flow/";
 
-data_range = 0:15;
-frame_count = length(data_range);
+% dataset_name = "250424_MN32-5_flow_6mm_static_FORCES-TxColumn";
+% dataset_name = "250424_MN32-5_flow_6mm_10_FORCES-TxColumn";
+% dataset_name = "250424_MN32-5_flow_6mm_60_FORCES-TxColumn";
+% dataset_name = "250424_MN32-5_flow_6mm_180_FORCES-TxColumn";
+dataset_name = "250425_MN32-5_flow_6mm_10_FORCES-TxColumn";
 
-data_root = "../vrs_data/readi/better_flow/";
+data_path = data_path_root + dataset_name + "/";
+params_path = data_path + dataset_name + ".bp";
 
-% data_file_name = "250424_MN32-5_flow_6mm_static_FORCES-TxColumn";
-% data_file_name = "250424_MN32-5_flow_6mm_10_FORCES-TxColumn";
-% data_file_name = "250424_MN32-5_flow_6mm_60_FORCES-TxColumn";
-% data_file_name = "250424_MN32-5_flow_6mm_180_FORCES-TxColumn";
+data_file_range = 0:15;
+data_file_paths = data_path + dataset_name + compose('_%02i.zst', data_file_range).';
 
-data_file_name = "250425_MN32-5_flow_6mm_10_FORCES-TxColumn";
+[bp, arrays] = load_and_parse_bp(params_path);
+bp.channel_mapping = arrays.channel_mapping;
+bp.focal_depths = arrays.focal_depths;
 
-data_folder   =  data_root + data_file_name + "/";
-data_paths = data_folder + data_file_name + compose('_%02i.zst', data_range).';
-params_path = data_folder + data_file_name + '.bp';
-% params_path = data_folder + 'parameters_fixed.bp';
 
-raw_bp = ornot_bp_load_mex(convertStringsToChars(params_path));
-
-frame_data_cell = cell(1,frame_count);
+frame_count = length(data_file_paths);
+frame_data = cell(1,frame_count);
 for i = 1:frame_count
-    data_file = fopen(data_paths(i), "r");
+    data_file = fopen(data_file_paths(i), "r");
     raw_data = fread(data_file, '*uint8');
     data = ornot_zstd_decompress_mex(raw_data);
-    frame_data_cell{i} = reshape(data, raw_bp.raw_data_dim(1),raw_bp.raw_data_dim(2));
+    frame_data{i} = reshape(data, bp.rf_raw_dim(1),bp.rf_raw_dim(2));
     fclose(data_file); 
 end
 
-%%
-bp.decode          = raw_bp.decode_mode;
-bp.beamform_plane  = raw_bp.beamform_mode;
-
-% bp.rf_raw_dim = raw_bp.rf_raw_dim;
-bp.rf_raw_dim.x      = raw_bp.raw_data_dim(1);
-bp.rf_raw_dim.y      = raw_bp.raw_data_dim(2);
-% bp.dec_data_dim    = raw_bp.dec_data_dim;
-bp.dec_data_dim.x    = raw_bp.decoded_data_dim(1);
-bp.dec_data_dim.y    = raw_bp.decoded_data_dim(2);
-bp.dec_data_dim.z    = raw_bp.decoded_data_dim(3);
-bp.dec_data_dim.w    = raw_bp.decoded_data_dim(4);
-
-% Map transducer properties
-bp.xdc_element_pitch = raw_bp.transducer_element_pitch;
-bp.xdc_transform     = raw_bp.transducer_transform_matrix;
-
-% Map channel and angle related fields
-bp.channel_mapping  = raw_bp.channel_mapping;
-bp.transmit_angles  = raw_bp.steering_angles;
-bp.focal_depths     = raw_bp.focal_depths;
-
-% Map acoustic parameters
-bp.speed_of_sound    = raw_bp.speed_of_sound;
-bp.center_frequency  = raw_bp.center_frequency;
-bp.sampling_frequency= raw_bp.sampling_frequency;
-bp.time_offset       = raw_bp.time_offset;
-
-% Map transmit mode
-bp.transmit_mode     = raw_bp.transmit_mode;
-
-
-%%
-% 0 = Forces, 1 = Uforces, 2 = Hercules
-bp.das_shader_id = 0;
+sample_count = single(bp.dec_data_dim(1));
+rx_channel_count = single(bp.dec_data_dim(2));
+transmit_count = single(bp.dec_data_dim(3));
 
 fc = bp.center_frequency;
 fs = bp.sampling_frequency;
 
-prf = 1000;
-
-expected_signal_length = bp.dec_data_dim.x * bp.dec_data_dim.z;
-
-cropped_data_cell = cell(1,frame_count);
-% The end of every channel has padded zeros not from any transmit, remove
-% them and optionally blank out the start
-for f = 1:frame_count
-
-    cropped_data = frame_data_cell{f};
-    cropped_data = cropped_data(1:expected_signal_length, :);
-    
-    % Blank out the start of the signal if the transmit is too loud
-    cropped_size = [bp.dec_data_dim.x, bp.dec_data_dim.z, size(cropped_data, 2)];
-    cropped_data = reshape(cropped_data, cropped_size);
-    start_depth = 5/1000;
-    start_sample = round(2 * start_depth * bp.sampling_frequency / bp.speed_of_sound);
-    tx_end_sample = start_sample -1;
-    cropped_data(1:tx_end_sample,:,:) = 0;
-
-    cropped_data_cell{f} = cropped_data;
-end
-
-
-
-% shuffled_data = shuffled_data(start_sample:end,:,:);
-% 
-% bp.dec_data_dim.x = bp.dec_data_dim.x - tx_end_sample;
-% bp.rf_raw_dim.x = bp.rf_raw_dim.x - tx_end_sample * 256;
+tx_region = 5/1000; % How far down to crop to avoid hearing the transmit pulse
+[frame_data, bp.rf_raw_dim] = crop_and_blank_tx(frame_data, bp, tx_region);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Volume Setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-x_range = [-10, 10]/1000;
-y_range = [0, 0]/1000;
-z_range = [10, 25]/1000;
+volume_ranges = [-10, 10; % X
+                  0,  0; % Y
+                  10, 25] / 1000; % Z
+
 lateral_resolution = 0.00005;
-axial_resolution = 0.00005;
+axial_resolution = lateral_resolution;
+
 bp.f_number = 0.5;
 
+[bp, x_range, y_range, z_range] = configure_output_points(volume_ranges, lateral_resolution, axial_resolution, bp);
 
-bp.output_min_coordinate = struct('x', x_range(1), 'y', y_range(1), 'z', z_range(1),   'w', 0);
-bp.output_max_coordinate = struct('x', x_range(2), 'y', y_range(2), 'z', z_range(2), 'w', 0);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Readi data prep
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-bp.output_points.x = max(1,floor((bp.output_max_coordinate.x - bp.output_min_coordinate.x)/lateral_resolution ));
-bp.output_points.y = max(1,floor((bp.output_max_coordinate.y - bp.output_min_coordinate.y)/lateral_resolution ));
-bp.output_points.z = max(1,floor((bp.output_max_coordinate.z - bp.output_min_coordinate.z)/axial_resolution ));
-bp.output_points.w = 1; % Not used but needs to be in the struct
+readi_bp = bp;
 
-x_range = linspace(x_range(1), x_range(2), bp.output_points.x);
-y_range = linspace(y_range(1), y_range(2), bp.output_points.y);
-z_range = linspace(z_range(1), z_range(2), bp.output_points.z);
-
-%% Data prep
 readi_group_count = 16;
-tx_count = bp.dec_data_dim.z;
-readi_group_size = tx_count/readi_group_count;
+readi_group_data = cell(frame_count,readi_group_count);
 
-bp.readi_group_size = readi_group_size;
-bp.readi_group_id = 0;
-group_data_cells = cell(frame_count,readi_group_count);
+readi_bp.readi_group_size = transmit_count/readi_group_count;
+readi_bp.readi_group_id = 0;
 
 % Break up transmits into Readi groups
 for f=1:frame_count
-    
-    frame_data = cropped_data_cell{f};
+    full_frame_data = frame_data{f};
     for i=1:readi_group_count
-        end_tx = i * bp.readi_group_size;
-        start_tx = end_tx - (bp.readi_group_size - 1);
-    
-        slice = frame_data(:,start_tx:end_tx,:);
-        if i == 1
-            slice(:,1,:) = zeros(size(slice(:,1,:)));
-        %     slice(:,1,:) = slice(:,1,:)./sqrt(64);
-        end
-        slice = reshape(slice, [], bp.rf_raw_dim.y);
-    
-        group_data_cells{f,i} = slice;
+        end_tx = i * readi_bp.readi_group_size;
+        start_tx = end_tx - (readi_bp.readi_group_size - 1);
+        readi_group_data{f,i} = full_frame_data(:,start_tx:end_tx,:);
     end
 end
-
-readi_expected_signal_length = length(slice);
-bp.rf_raw_dim.x = readi_expected_signal_length;
+readi_bp.rf_raw_dim(1) = readi_bp.readi_group_size * sample_count;
 
 
-if libisloaded('cuda_transfer'), unloadlibrary('cuda_transfer'); end
-
-loadlibrary('cuda_transfer')
-
-
-fprintf("Sending data\n")
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Beamforming
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fprintf("Starting Beamforming\n");
-output_counts_xyz.x = bp.output_points.x;
-output_counts_xyz.y = bp.output_points.y;
-output_counts_xyz.z = bp.output_points.z;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-low_res_array = cell(frame_count,readi_group_count);
+if ~libisloaded('cuda_transfer'), loadlibrary('cuda_transfer'); end
 
-% Complex volumes aren't supported so they're interleaved
-interleaved_volume_size = [bp.output_points.x*2, bp.output_points.y, bp.output_points.z];
+raw_images = cell(size(readi_group_data));
 
-% Readi loop
 for f = 1:frame_count
-    fprintf("\nFrame %i/%i: \n", f,frame_count);
+    readi_bp.readi_group_id = 0;
     for g = 1:readi_group_count
-        calllib('cuda_transfer', 'set_beamformer_parameters', smem_name, bp);
-    
-        fprintf("\tReadi group %02i", g);
-        volume_ptr = libpointer('singlePtr', single(zeros(interleaved_volume_size)));
-    
-        [~,~,~,volume_ptr] = calllib('cuda_transfer', 'beamform_i16', ...
-            pipe_name, smem_name, group_data_cells{f,g}, bp.rf_raw_dim, output_counts_xyz, volume_ptr);
-        fprintf("........Received Response\n")
-        
-        volume = reshape(volume_ptr,interleaved_volume_size );
-    
-        real_vol = volume(1:2:end,:,:);
-        im_vol = volume(2:2:end,:,:);
-        
-        low_res_array{f,g} = squeeze(complex(real_vol, im_vol)).';
-    
-        pause(0.05);
-        bp.readi_group_id = bp.readi_group_id + 1;
-       
+        fprintf("Beamforming Image %d, Group %d\n", f, g);
+        raw_image = cuda_beamform_real(readi_group_data{f,g}, readi_bp);
+        fprintf("Done\n");
+        raw_images{f,g} = raw_image.';
+        readi_bp.readi_group_id = readi_bp.readi_group_id + 1;
     end
-    bp.readi_group_id = 0;
 end
 
-clear('data');
-clear('cropped_data_cell')
-clear('frame_data_cell')
+if true, unloadlibrary('cuda_transfer'); end
 
-unloadlibrary('cuda_transfer')
+
+fprintf("Beamforming Complete\n");
+
+clear("readi_group_data");
 
 %% Motion compensation
+
+low_res_array = raw_images;
 
 vessel_row_start = 102;
 vessel_row_end = 210;
