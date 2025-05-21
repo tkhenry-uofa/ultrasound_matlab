@@ -8,7 +8,6 @@ if isempty(matlab.project.currentProject)
 end
 
 data_path_root   = "vrs_data/match_filter_test/";
-
 dataset_name = "250514_MN32-5_reso_FORCES-TxColumn";
 data_file_range = 0:3;
 
@@ -92,6 +91,6 @@ figure();
 plot_bmode(processed_image, x_range, z_range);
 colorbar;
 
-plot_image_grid(processed_image_array, x_range, z_range, [2, 2],"Sequence");
+plot_image_grid(processed_image_array, [2, 2], x_range, z_range, "Sequence");
 
 

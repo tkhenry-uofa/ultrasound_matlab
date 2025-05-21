@@ -129,6 +129,6 @@ processed_forces_image = process_volume(forces_image_raw,dynamic_range,threshold
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 figure();
-plot_bmode(processed_forces_image, x_range, z_range);
+plot_bmode(processed_forces_image, x_range, z_range, "Forces Image");
 colorbar;
-plot_image_grid(processed_image_array, x_range, z_range, [4, 4],"Readi Groups");
+plot_image_grid(processed_image_array, [4, 4], x_range, z_range, "Readi Groups");

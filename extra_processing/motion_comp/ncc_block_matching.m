@@ -62,7 +62,6 @@ power_threshold = 3000;
 reference_readi_group = 8;
 
 
-image_array = filtered_frame_cell(forces_frame_id,:);
 
 
 raw_reference_image = image_array{reference_readi_group};
@@ -75,8 +74,18 @@ image_size = [row_count,col_count];
 num_patches_y = ceil((row_count - patch_size + 1) / motion_grid_size);
 num_patches_x = ceil((col_count - patch_size + 1) / motion_grid_size);
 
-motion_row_start = floor(vessel_row_start / motion_grid_size);
-motion_row_end = ceil(vessel_row_end / motion_grid_size);
+if exist("vessel_row_start", "var")
+    motion_row_start = floor(vessel_row_start / motion_grid_size);
+else
+    motion_row_start = 1;
+end
+
+if exist("vessel_row_end", "var") 
+    motion_row_end = ceil(vessel_row_end / motion_grid_size);
+else
+    motion_row_end = num_patches_y;
+end
+
 
 motion_array = zeros(num_patches_y, num_patches_x, 2);
 

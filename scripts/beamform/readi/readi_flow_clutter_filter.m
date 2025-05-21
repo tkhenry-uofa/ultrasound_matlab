@@ -20,7 +20,7 @@ dataset_name = "250425_MN32-5_flow_6mm_10_FORCES-TxColumn";
 data_path = data_path_root + dataset_name + "/";
 params_path = data_path + dataset_name + ".bp";
 
-data_file_range = 0:15;
+data_file_range = 0:7;
 data_file_paths = data_path + dataset_name + compose('_%02i.zst', data_file_range).';
 
 [bp, arrays] = load_and_parse_bp(params_path);
@@ -121,6 +121,7 @@ low_res_array = raw_images;
 vessel_row_start = 102;
 vessel_row_end = 210;
 vessel_row_range = vessel_row_start:vessel_row_end;
+vessel_col_range = 1:size(raw_image.',2);
 
 svd_test;
 
@@ -129,6 +130,7 @@ tic;
 shifted_images = low_res_array(1,:);
 
 forces_frame_id =7;
+image_array = filtered_frame_cell(forces_frame_id,:);
 ncc_block_matching;
 
 elapsed = toc;
@@ -202,87 +204,71 @@ profile_row_range = vessel_row_start:vessel_row_end+20;
 average_flow_curve = average_flow_curve(profile_row_range);
 flow_velocity = flow_velocity(profile_row_range);
 
-%%
-figure();
-sgtitle("Axial Flow Profiles");
-subplot 121;
-plot(z_range(profile_row_range).*1000,average_flow_curve./10);
-title("Laterally-Averaged Velocity");
-ylim([0 1.2]);
-xlabel("Depth (mm)");
-ylabel("Velocity (cm/s)");
+%% Plot Flow Profiles
+% figure();
+% sgtitle("Axial Flow Profiles");
+% subplot 121;
+% plot(z_range(profile_row_range).*1000,average_flow_curve./10);
+% title("Laterally-Averaged Velocity");
+% ylim([0 1.2]);
+% xlabel("Depth (mm)");
+% ylabel("Velocity (cm/s)");
+% 
+% subplot 122
+% plot(z_range(profile_row_range).*1000, flow_velocity./10);
+% title("Velocity Profile at X=6.2mm");
+% xlabel("Depth (mm)");
+% ylabel("Velocity (cm/s)");
 
-subplot 122
-plot(z_range(profile_row_range).*1000, flow_velocity./10);
-title("Velocity Profile at X=6.2mm");
-xlabel("Depth (mm)");
-ylabel("Velocity (cm/s)");
+%% Plot Image Components 
 
-%% Plotting
+% figure();
+% 
+% sgtitle('1.2 cm/s Peak Flow', 'FontSize',14)
+% 
+% subplot 221
+% colormap("gray");
+% imagesc(x_range*1000, z_range*1000, processed_forces_image);
+% title("Forces Image");
+% axis("image")
+% ylabel("Depth (mm)");
+% xlabel("Lateral Position (mm)");
+% 
+% subplot 222
+% colormap("gray");
+% imagesc(x_range*1000, z_range*1000, processed_shifted_image);
+% title('Motion Compensated Speckle')
+% axis("image")
+% ylabel("Depth (mm)");
+% xlabel("Lateral Position (mm)");
+% 
+% subplot 223
+% colormap("gray");
+% imagesc(x_range*1000, z_range*1000, processed_combined_image);
+% title('Combined Image')
+% axis("image")
+% ylabel("Depth (mm)");
+% xlabel("Lateral Position (mm)");
+% 
+% ax = subplot(2,2,4);
+% imagesc(x_range*1000, z_range*1000, abs(full_x_motion)./10);
+% title('Lateral Motion Map')
+% colormap(ax,"hot");
+% axis("image")
+% colorbar('Position', [0.92 0.12 0.02 0.3]);
+% ylabel("Depth (mm)");
+% xlabel("Lateral Position (mm)");
 
-figure();
-
-sgtitle('1.2 cm/s Peak Flow', 'FontSize',14)
-
-subplot 221
-colormap("gray");
-imagesc(x_range*1000, z_range*1000, processed_forces_image);
-title("Forces Image");
-axis("image")
-ylabel("Depth (mm)");
-xlabel("Lateral Position (mm)");
-
-subplot 222
-colormap("gray");
-imagesc(x_range*1000, z_range*1000, processed_shifted_image);
-title('Motion Compensated Speckle')
-axis("image")
-ylabel("Depth (mm)");
-xlabel("Lateral Position (mm)");
-
-subplot 223
-colormap("gray");
-imagesc(x_range*1000, z_range*1000, processed_combined_image);
-title('Combined Image')
-axis("image")
-ylabel("Depth (mm)");
-xlabel("Lateral Position (mm)");
-
-ax = subplot(2,2,4);
-imagesc(x_range*1000, z_range*1000, abs(full_x_motion)./10);
-title('Lateral Motion Map')
-colormap(ax,"hot");
-axis("image")
-colorbar('Position', [0.92 0.12 0.02 0.3]);
-ylabel("Depth (mm)");
-xlabel("Lateral Position (mm)");
-
-%% Layered Image
+%% Make Layered Image
 base_image = processed_combined_image;
 color_image = abs(full_x_motion) ./ 10;
 alpha = 0.6;  % Opacity for the top image
 
-alpha_map = zeros(size(processed_combined_image));
-alpha_map(vessel_row_start:vessel_row_end,:) = alpha;
-
-base_norm = mat2gray(base_image);
-color_norm  = mat2gray(color_image);
-
-% 2. Map each to their respective colormaps
-% 256 is default size of MATLAB colormaps
-gray_map = gray(256);
-color_map = hot(256);
-
-base_mapped = ind2rgb(round(base_norm * 255) + 1, gray_map);
-top_mapped  = ind2rgb(round(color_norm  * 255) + 1, color_map);
-
-% 3. Blend the two using per-pixel alpha
-% alpha_map = mat2gray(alpha_map); % Ensure alpha between 0 and 1
-composite_rgb = (1 - alpha_map) .* base_mapped + alpha_map .* top_mapped;
+composite_rgb = layer_heatmap(processed_combined_image, color_image, vessel_row_range, vessel_col_range, alpha );
 
 fg = figure();
 imagesc(x_range.*1000,z_range.*1000,composite_rgb);
-fg.Colormap = color_map;
+fg.Colormap = hot(256);
 
 cb = colorbar('Position', [0.92 0.15 0.02 0.7]);
 cb.Ticks = linspace(0,1,7);
@@ -292,27 +278,3 @@ title("1.2 cm/s Lateral Flow", "FontSize",14)
 ylabel("Depth (mm)");
 xlabel("Lateral Position (mm)");
 
-combined_images(:,:,:,forces_frame_id) = composite_rgb; 
-
-%%
-
-figure();
-
-sgtitle('Filtered READI Flow','FontSize',16);
-
-% Loop through the images and display each in the 2x8 grid
-for i = 1:16
-
-
-    subplot(4, 4, i); 
-    colormap("gray");
-    imagesc(x_range*1000, z_range*1000,(squeeze(processed_frame_array(:,:,frame_range(i)))));
-    title(['Image ' num2str(i)]);
-    xlabel("mm");
-    ylabel("mm");
-
-    % clim([-dynamic_range, 0]); 
-
-
-end
-% colorbar('Position', [0.92 0.15 0.02 0.7]);
