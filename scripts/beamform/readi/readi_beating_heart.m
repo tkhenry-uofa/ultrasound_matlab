@@ -44,7 +44,7 @@ volume_ranges = [-40, 40; % X
 lateral_resolution = 0.0002;
 axial_resolution = lateral_resolution;
 
-bp.f_number = 0.5;
+bp.f_number = 1.0;
 
 [bp, x_range, y_range, z_range] = configure_output_points(volume_ranges, lateral_resolution, axial_resolution, bp);
 
@@ -83,6 +83,8 @@ figure();
 plot_bmode(processed_image, x_range, z_range);
 colorbar;
 
-plot_image_grid(processed_image_array, [4, 4], x_range, z_range, "Sequence");
+animate_frames(processed_image_array);
+
+% plot_image_grid(processed_image_array, [4, 4], x_range, z_range, "Sequence");
 
 
