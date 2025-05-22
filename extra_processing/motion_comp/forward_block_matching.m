@@ -24,10 +24,10 @@ function [shifted_images, motion_cell] = forward_block_matching( ...
     search_patches = max(search_patches, edge_patch_margin);
     search_patches = min(search_patches, total_patches - edge_patch_margin);
 
-    patch_range_z = search_patches(1,1):search_patches(1,2);
+    patch_range_z = search_patches(1,1):search_patches(2,1);
     patch_range_x = search_patches(1,2):search_patches(2,2);
     
-    for G = 1:image_count
+    parfor G = 1:image_count
         fprintf("Image: %i\n", G);
 
         current_image = image_array{G};
@@ -45,6 +45,7 @@ function [shifted_images, motion_cell] = forward_block_matching( ...
         current_v_margin = v_margin;
     
         peak_index = [0 0];
+        % TODO: Break this into an estimation and a warp pass
         for i = patch_range_z
     
             for j = patch_range_x
