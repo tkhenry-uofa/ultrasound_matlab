@@ -9,96 +9,54 @@ if isempty(matlab.project.currentProject)
     proj = openProject("../Ultrasound-Beamforming/Ultrasound-Beamforming.prj");
 end
 
-data_path   = "vrs_data/match_filter_test/";
+data_path_root   = "vrs_data/readi/stage_motion/";
+dataset_name = "250423_MN32-5_reso_motion_FORCES-TxColumn";
+data_file_range = 0:15;
 
-data_path = data_path + "250514_MN32-5_cyst_FORCES-TxColumn/";
-data_file_name = "250514_MN32-5_cyst_FORCES-TxColumn_00";
-params_path = data_path + '250514_MN32-5_cyst_FORCES-TxColumn.bp';
+data_path = data_path_root + dataset_name + "/";
+params_path = data_path + dataset_name + ".bp";
 
-data_file_name   = data_file_name + ".zst";
+bp = load_and_parse_bp(params_path);
+frame_data_cell = load_vrs_data(data_path + dataset_name, data_file_range, bp.rf_raw_dim);
+frame_count = length(frame_data_cell);
 
-pipe_name = '\\.\pipe\beamformer_data_fifo';
-smem_name = 'Local\ogl_beamformer_parameters';
-pipe_output = '\\.\pipe\beamformer_output_fifo'; % hardcoded in the lib rn
+sample_count = single(bp.dec_data_dim(1));
+rx_channel_count = single(bp.dec_data_dim(2));
+transmit_count = single(bp.dec_data_dim(3));
 
-data_file = fopen(data_path + data_file_name, "r");
-raw_data = uint8(fread(data_file));
-fclose(data_file);
+fc = bp.center_frequency;
+fs = bp.sampling_frequency;
 
-data = ornot_zstd_decompress_mex(raw_data);
+tx_region = 2.5/1000; % How far down to crop to avoid hearing the transmit pulse
+[frame_data_cell, bp.rf_raw_dim] = crop_and_blank_tx(frame_data_cell, bp, tx_region);
 
-raw_bp = ornot_bp_load_mex(convertStringsToChars(params_path));
-data = reshape(data, raw_bp.raw_data_dim(1:2));
-data_info = whos('data');
-data_size = data_info.bytes;
 
-%% BF parameter construction
-% Sequence-specific data
-bp_head.decode          = raw_bp.decode_mode;
-bp_head.rf_raw_dim      = raw_bp.raw_data_dim(1:2);
+% Render settings
+x_range = [-20, 20]/1000;
+z_range = [5, 70]/1000;
+y_range = [0, 0]/1000;
 
-bp_head.dec_data_dim    = raw_bp.decoded_data_dim;
 
-transmit_count = bp_head.dec_data_dim(3);
+bp.output_min_coordinate = [x_range(1), y_range(1), z_range(1), 0];
+bp.output_max_coordinate = [x_range(2), y_range(2), z_range(2), 0];
 
-% Map transducer properties
-bp_head.xdc_element_pitch = raw_bp.transducer_element_pitch;
-bp_head.xdc_transform     = raw_bp.transducer_transform_matrix;
+bp.output_points = [ 512 1 1024 0 ];
 
-bp_head.time_offset       = raw_bp.time_offset;
+bp.interpolate = false; % bool
 
-bp_head.transmit_mode     = raw_bp.transmit_mode;
-bp_head.das_shader_id     = raw_bp.beamform_mode;
+bp.off_axis_pos = 0; 
+bp.beamform_plane = 0;
+bp.f_number = 0;
 
-transmit_mode = acquisition.TransmitModes(bp_head.transmit_mode);
+[bp_head, bp_ui, bp_tail, arrays] = split_bp(bp);
 
+transmit_mode = acquisition.TransmitModes(bp.transmit_mode);
 if(transmit_mode == acquisition.TransmitModes.RowTxRowRx || ...
    transmit_mode == acquisition.TransmitModes.ColTxRowRx )
     image_plane = 1;
 else
     image_plane = 0;
 end
-
-% Readi stuff
-bp_tail.readi_group_id = 0;
-bp_tail.readi_group_size = transmit_count;
-
-% Render settings
-x_range = [-20, 20]/1000;
-z_range = [5, 70]/1000;
-y_range = [20, 20]/1000;
-
-
-bp_ui.output_min_coordinate = [x_range(1), y_range(1), z_range(1), 0];
-bp_ui.output_max_coordinate = [x_range(2), y_range(2), z_range(2), 0];
-
-bp_ui.output_points = [ 512 1 1024 0 ];
-
-bp_ui.speed_of_sound    = raw_bp.speed_of_sound;
-bp_ui.center_frequency  = raw_bp.center_frequency;
-bp_ui.sampling_frequency= raw_bp.sampling_frequency;
-
-bp_ui.interpolate = false; % bool
-
-bp_ui.off_axis_pos = 0; 
-bp_ui.beamform_plane = 0;
-
-bp_ui.f_number = 0;
-
-
-channel_mapping = raw_bp.channel_mapping;
-sparse_elements = raw_bp.sparse_elements;
-if(sparse_elements(1) == -1)
-    sparse_elements(1:transmit_count) = 1:transmit_count;
-end
-focal_depths = raw_bp.focal_depths;
-% focal_depths(:) = focal_depths(1);
-
-focal_angles = raw_bp.steering_angles;
-
-focal_vectors = zeros(1, length(focal_depths) * 2);
-focal_vectors(1:2:end) = focal_angles;
-focal_vectors(2:2:end) = focal_depths;
 
 
 cs_stages = uint8([
@@ -107,25 +65,23 @@ cs_stages = uint8([
 	OGLShaderStage.DAS
 ]);
 % 
-cs_stages = uint8([
-	OGLShaderStage.CUDA_DECODE, ...
-	OGLShaderStage.DAS
-]);
+% cs_stages = uint8([
+% 	OGLShaderStage.CUDA_DECODE, ...
+% 	OGLShaderStage.DAS
+% ]);
 
 
 
-if libisloaded('ogl_beamformer_lib'), unloadlibrary('ogl_beamformer_lib'); end
-
-loadlibrary('ogl_beamformer_lib')
+if ~libisloaded('ogl_beamformer_lib'), loadlibrary('ogl_beamformer_lib'); end
 
 fprintf("Setting params\n")
 
 timeout_ms = 0;
 
 %% Sending Params
-calllib('ogl_beamformer_lib', 'beamformer_push_channel_mapping', channel_mapping, numel(channel_mapping), timeout_ms);
-calllib('ogl_beamformer_lib', 'beamformer_push_sparse_elements', sparse_elements, numel(sparse_elements), timeout_ms);
-calllib('ogl_beamformer_lib', 'beamformer_push_focal_vectors', focal_vectors, transmit_count, timeout_ms);
+calllib('ogl_beamformer_lib', 'beamformer_push_channel_mapping', arrays.channel_mapping, numel(arrays.channel_mapping), timeout_ms);
+calllib('ogl_beamformer_lib', 'beamformer_push_sparse_elements', arrays.sparse_elements, numel(arrays.sparse_elements), timeout_ms);
+calllib('ogl_beamformer_lib', 'beamformer_push_focal_vectors', arrays.focal_vectors, transmit_count, timeout_ms);
 
 calllib('ogl_beamformer_lib', 'beamformer_push_parameters_ui', bp_ui, timeout_ms);
 calllib('ogl_beamformer_lib', 'beamformer_push_parameters_head', bp_head, timeout_ms);
@@ -133,13 +89,24 @@ calllib('ogl_beamformer_lib', 'set_beamformer_pipeline', cs_stages, numel(cs_sta
 
 %% Sending data
 
-if calllib('ogl_beamformer_lib', 'beamformer_push_data', data, data_size, timeout_ms)
-    calllib('ogl_beamformer_lib', 'beamformer_start_compute', image_plane);
-else
-    warning("OGL Beamfroming Push Data Failed");
+
+frame_data = frame_data_cell{1};
+info = whos('frame_data');
+data_size = info.bytes;
+
+for i = 1:frame_count
+
+    frame_data = frame_data_cell{i};
+    if calllib('ogl_beamformer_lib', 'beamformer_push_data', frame_data, data_size, timeout_ms)
+        calllib('ogl_beamformer_lib', 'beamformer_start_compute', image_plane);
+    else
+        warning("OGL Beamfroming Push Data Failed");
+    end
+
+    pause(0.5);
 end
 
-unloadlibrary('ogl_beamformer_lib')
+if true, unloadlibrary('ogl_beamformer_lib'); end
 
 
 

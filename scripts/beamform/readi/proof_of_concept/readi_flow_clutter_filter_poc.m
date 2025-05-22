@@ -23,20 +23,9 @@ params_path = data_path + dataset_name + ".bp";
 data_file_range = 0:7;
 data_file_paths = data_path + dataset_name + compose('_%02i.zst', data_file_range).';
 
-[bp, arrays] = load_and_parse_bp(params_path);
-bp.channel_mapping = arrays.channel_mapping;
-bp.focal_depths = arrays.focal_depths;
-
-
-frame_count = length(data_file_paths);
-frame_data = cell(1,frame_count);
-for i = 1:frame_count
-    data_file = fopen(data_file_paths(i), "r");
-    raw_data = fread(data_file, '*uint8');
-    data = ornot_zstd_decompress_mex(raw_data);
-    frame_data{i} = reshape(data, bp.rf_raw_dim(1),bp.rf_raw_dim(2));
-    fclose(data_file); 
-end
+bp = load_and_parse_bp(params_path);
+frame_data = load_vrs_data(data_path + dataset_name, data_file_range, bp.rf_raw_dim);
+frame_count = length(frame_data);
 
 sample_count = single(bp.dec_data_dim(1));
 rx_channel_count = single(bp.dec_data_dim(2));

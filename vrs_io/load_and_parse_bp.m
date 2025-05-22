@@ -1,4 +1,4 @@
-function [bp, arrays] = load_and_parse_bp(path)
+function bp = load_and_parse_bp(path)
 
     raw_bp = ornot_bp_load_mex(convertStringsToChars(path));
 
@@ -40,8 +40,9 @@ function [bp, arrays] = load_and_parse_bp(path)
 
 
     %% Arrays
-    arrays.channel_mapping  = raw_bp.channel_mapping;
-    arrays.transmit_angles  = raw_bp.steering_angles;
-    arrays.focal_depths     = raw_bp.focal_depths;
+    bp.channel_mapping  = raw_bp.channel_mapping;
+    bp.transmit_angles  = raw_bp.steering_angles;
+    bp.focal_depths     = raw_bp.focal_depths;
+    bp.sparse_elements  = raw_bp.sparse_elements;
 
 end

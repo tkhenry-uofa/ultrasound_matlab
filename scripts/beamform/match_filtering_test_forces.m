@@ -29,13 +29,8 @@ raw_data = fread(data_file_h, '*uint8');
 fclose(data_file_h); 
 data = ornot_zstd_decompress_mex(raw_data);
 
-[bp, arrays] = load_and_parse_bp(params_path);
-
-
+bp = load_and_parse_bp(params_path);
 data = reshape(data, bp.rf_raw_dim(1),bp.rf_raw_dim(2));
-
-bp.channel_mapping = arrays.channel_mapping;
-bp.focal_depths = arrays.focal_depths;
 
 sample_count = single(bp.dec_data_dim(1));
 rx_channel_count = single(bp.dec_data_dim(2));
