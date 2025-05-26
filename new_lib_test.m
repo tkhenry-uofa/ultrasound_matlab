@@ -1,6 +1,6 @@
 clear all;
 
-addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\matlab_lib")
+addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\client_lib\output")
 addpath('C:\Users\tkhen\source\repos\ornot\core\lib');
 
 if isempty(matlab.project.currentProject)
@@ -52,18 +52,23 @@ bp.f_number = 1.0;
 %% Beamforming
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ~libisloaded('cuda_transfer'), loadlibrary('cuda_transfer'); end
-
 raw_images = cell(1,frame_count);
 
 for i = 1:frame_count
     fprintf("Beamforming Image %d\n", i);
-    raw_image = cuda_beamform_real(frame_data{i}, bp);
+
+    % try
+        raw_image = cuda_new_lib(frame_data{i}, bp);
+    % catch ex
+    %     unloadlibrary('cuda_transfer_new');
+    %     rethrow(ex);
+    % end
+    
     fprintf("Done\n");
     raw_images{i} = raw_image;
 end
 
-if true, unloadlibrary('cuda_transfer'); end
+if true && libisloaded('cuda_transfer_new_matlab'), unloadlibrary('cuda_transfer_new_matlab'); end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Post processing 
@@ -83,7 +88,7 @@ figure();
 plot_bmode(processed_image, x_range, z_range);
 colorbar;
 
-animate_frames(processed_image_array);
+% animate_frames(processed_image_array);
 
 % plot_image_grid(processed_image_array, [4, 4], x_range, z_range, "Sequence");
 
