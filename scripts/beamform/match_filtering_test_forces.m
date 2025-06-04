@@ -8,7 +8,7 @@ if isempty(matlab.project.currentProject)
     proj = openProject("../Ultrasound-Beamforming/Ultrasound-Beamforming.prj");
 end
 
-data_path_root   = "../vrs_data/match_filter_test/";
+data_path_root   = "vrs_data/match_filter_test/";
 
 dataset_name = "250514_MN32-5_reso_FORCES-TxColumn";
 % dataset_name = "250514_MN32-5_reso_FORCES-TxColumn-Chirp-2e-05";
@@ -92,20 +92,20 @@ loadlibrary('cuda_transfer')
 
 %% Unfiltered
 bp.filter_length = 0;
-bp.match_filter = single(zeros(1024,1));
+bp.rf_filter = single(zeros(1024,1));
 
 fprintf("Beamforming Unfiltered\n");
-unfiltered_raw_img = cuda_beamform_real(cropped_data, bp);
+unfiltered_raw_img = cuda_beamform(cropped_data, bp);
 fprintf("Done\n");
 
 %% Filtered
 filtered_bp = bp;
 filtered_bp.filter_length = length(match_filter);
-filtered_bp.match_filter(1:length(match_filter)) = match_filter;
+filtered_bp.rf_filter(1:length(match_filter)) = match_filter;
 filtered_bp.time_offset = bp.time_offset + (length(match_filter)-1) * 1.0 / bp.sampling_frequency;
 
 fprintf("Beamforming Filtered\n");
-filtered_raw_img = cuda_beamform_real(cropped_data,filtered_bp);
+filtered_raw_img = cuda_beamform(cropped_data,filtered_bp);
 fprintf("Done\n");
 
 unloadlibrary('cuda_transfer')

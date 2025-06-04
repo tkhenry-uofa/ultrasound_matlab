@@ -87,7 +87,7 @@ for f = 1:frame_count
     readi_bp.readi_group_id = 0;
     for g = 1:readi_group_count
         fprintf("Beamforming Image %d\n", g );
-        raw_image = cuda_new_lib(readi_group_data{f,g}, readi_bp);
+        raw_image = cuda_beamform(readi_group_data{f,g}, readi_bp);
         fprintf("Done\n");
         raw_images{f,g} = raw_image;
         readi_bp.readi_group_id = readi_bp.readi_group_id + 1;

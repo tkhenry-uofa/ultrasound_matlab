@@ -52,18 +52,16 @@ bp.f_number = 0.5;
 %% Beamforming
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ~libisloaded('cuda_transfer'), loadlibrary('cuda_transfer'); end
-
 raw_images = cell(1,frame_count);
 
 for i = 1:frame_count
     fprintf("Beamforming Image %d\n", i);
-    raw_image = cuda_beamform_real(frame_data{i}, bp);
+    raw_image = cuda_beamform(frame_data{i}, bp);
     fprintf("Done\n");
     raw_images{i} = raw_image;
 end
 
-if true, unloadlibrary('cuda_transfer'); end
+if true, unloadlibrary('cuda_transfer_matlab'); end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Post processing 

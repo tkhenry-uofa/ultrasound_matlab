@@ -59,25 +59,9 @@ bp.f_number = 0.5;
 %% Readi data prep
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-readi_bp = bp;
-
 readi_group_count = 8;
-readi_group_data = cell(frame_count,readi_group_count);
 
-readi_bp.readi_group_size = transmit_count/readi_group_count;
-readi_bp.readi_group_id = 0;
-
-% Break up transmits into Readi groups
-for f=1:frame_count
-    full_frame_data = frame_data{f};
-    for i=1:readi_group_count
-        end_tx = i * readi_bp.readi_group_size;
-        start_tx = end_tx - (readi_bp.readi_group_size - 1);
-        readi_group_data{f,i} = full_frame_data(:,start_tx:end_tx,:);
-    end
-end
-readi_bp.rf_raw_dim(1) = readi_bp.readi_group_size * sample_count;
-
+[readi_group_data, readi_bp] = readi_data_breakup(frame_data, bp, readi_group_count);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Beamforming
@@ -91,7 +75,7 @@ for f = 1:frame_count
     readi_bp.readi_group_id = 0;
     for g = 1:readi_group_count
         fprintf("Beamforming Image %d, Group %d\n", f, g);
-        current_raw_image = cuda_beamform_real(readi_group_data{f,g}, readi_bp);
+        current_raw_image = cuda_beamform(readi_group_data{f,g}, readi_bp);
         fprintf("Done\n");
         raw_images{f,g} = current_raw_image.';
         readi_bp.readi_group_id = readi_bp.readi_group_id + 1;
