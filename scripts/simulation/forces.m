@@ -58,7 +58,7 @@ pulse_delay = returned_time( round(length(returned_time)/2));
 %% Tx delays and apodizations
 
 transmit_type = TransmitType.Elevation_Focus;
-sequence_type = SequenceType.Readi;
+sequence_type = SequenceType.FORCES;
 
 src_loc = [0 0 100]/1000; % m
 forces_sources = 1:column_count;
@@ -170,42 +170,22 @@ resolution = 0.00015; % Spatial voxel size
 
 vol_config = volume_config(x_range,y_range,z_range,resolution);
 
-%% Forces Decoding
-data_array_force = reshape(data_array, [], no_transmits);
-H = hadamard(no_transmits);
-
-% We need a matrix with size (data length*channel count) X transmit count
-
-data_array_force = data_array_force * H;
-data_array_force = reshape(data_array_force, max_length, column_count, no_transmits);
-data_array_force = hilbert(data_array_force);
-
-% Split into cells to work nicely with parfor
-data_cell = mat2cell(data_array_force, max_length, column_count, ones(1, no_transmits));
-
-
+vol_config.f_number = 0;
+vol_config.readi_group_count = 1;
 
 %% Forces Beamforming
 tic;
 fprintf("Volume Building\n")
 
-f_number = 0;
-
-% bp.das_shader_id = 0; % Forces
-% bp.das_shader_id = 2; % Hercules
-sequence_type = 0;
-
 % all_scans = lpf_rf_data(all_scans,f0,fs);
 cuda_beamform = true;
 if cuda_beamform == true
-    cuda_cell = cuda_processing_f2(data_array,tx_config,1,vol_config, f_number, sequence_type);
-    forces_image_raw = cuda_cell{1};
+    cuda_cell = cuda_processing_f2(data_array,tx_config,vol_config, true);
+    forces_image_raw = cuda_cell{1}.';
 else
     forces_image_raw = beamform_volume(tx_config, vol_config, data_cell, rx_element_locs,...
     1:vol_config.x_count, vol_config.y_mid, 1:vol_config.z_count,parallel, f_number);
 end
-forces_image_raw = squeeze(forces_image_raw(:,vol_config.y_mid,:)).';
-
 %% Processing
 dynamic_range = 50;
 

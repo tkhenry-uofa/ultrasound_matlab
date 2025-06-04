@@ -55,14 +55,16 @@ function low_res_array = cuda_processing_f2(rf_data,tx_config,vol_config,plane)
         bp.output_min_coordinate(2) = 0;
         bp.output_max_coordinate(2) = 0;
     end
-
-    
    
     %% Readi
     
     if(isfield(vol_config, "readi_group_count"))
         readi_group_count = vol_config.readi_group_count;
     else
+        readi_group_count = 1;
+    end
+
+    if readi_group_count < 1
         readi_group_count = 1;
     end
 
@@ -93,7 +95,7 @@ function low_res_array = cuda_processing_f2(rf_data,tx_config,vol_config,plane)
     low_res_array = cell(1,readi_group_count);
     for g = 1:readi_group_count
         fprintf("Beamforming Image %d\n", g );
-        raw_image = cuda_new_lib(data_group_cells{g}, bp);
+        raw_image = cuda_beamform(data_group_cells{g}, bp);
         fprintf("Done\n");
         low_res_array{g} = raw_image;
         bp.readi_group_id = bp.readi_group_id + 1;
