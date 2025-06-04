@@ -20,7 +20,7 @@ dataset_name = "250425_MN32-5_flow_6mm_10_FORCES-TxColumn";
 data_path = data_path_root + dataset_name + "/";
 params_path = data_path + dataset_name + ".bp";
 
-data_file_range = 0:7;
+data_file_range = 0:15;
 data_file_paths = data_path + dataset_name + compose('_%02i.zst', data_file_range).';
 
 bp = load_and_parse_bp(params_path);

@@ -1,7 +1,7 @@
 function [rx_array, rx_subs] = create_rx_array(config, transmit_no,active_rx_els)
 
-    encoded_sequences = [SequenceType.Hercules, SequenceType.Hercforce];
-    linear_sequences = [SequenceType.Forces, SequenceType.Readi];
+    encoded_sequences = [SequenceType.HERCULES];
+    linear_sequences = [SequenceType.FORCES];
 
     rx_subs = config.sub_element_count;
     if(ismember(config.sequence, linear_sequences))

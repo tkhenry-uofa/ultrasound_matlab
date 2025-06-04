@@ -54,4 +54,7 @@ function config = volume_config(x_range,y_range,z_range,resolution)
     
     config.size = [config.x_count,config.y_count,config.z_count];
 
+    config.f_number = 0;
+    config.readi_group_count = 0;
+
 end

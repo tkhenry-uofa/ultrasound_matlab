@@ -24,7 +24,7 @@ function [tx_array, config] = create_tx_array(config, transmit_no)
 
     apo = config.apo;
 
-    encoded_sequences = [SequenceType.Forces, SequenceType.Hercforce, SequenceType.Readi];
+    encoded_sequences = [SequenceType.FORCES, SequenceType.UFORCES];
     if(ismember(config.sequence, encoded_sequences))
         H = hadamard(config.no_transmits);
         tx_pattern = H(:,transmit_no);

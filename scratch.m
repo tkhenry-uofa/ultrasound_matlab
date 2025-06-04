@@ -1,9 +1,4 @@
 
-motion_array = motion_cell{1};
+raw_frame_cell = low_res_array;
 
-U = squeeze(motion_array(:,:,1));
-V = squeeze(motion_array(:,:,2));
-
-
-figure();
-quiver(U,V);
+save("flow_data_full.mat", "raw_frame_cell", "filtered_frame_cell");

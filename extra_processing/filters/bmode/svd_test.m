@@ -1,5 +1,6 @@
 
-
+frame_count_real = frame_count;
+% frame_count = 12;
 image_size = size(low_res_array{1,1});
 
 image_count = frame_count * readi_group_count;
@@ -24,14 +25,16 @@ S_filter = S;
 % 10 ml
 % tissue_svd_cutoff = 17;
 % noise_svd_cutoff = 120;
-tissue_svd_cutoff = 17;
-noise_svd_cutoff = 100;
 
 % 60 ml
 % tissue_svd_cutoff = 20;
 % noise_svd_cutoff = 80;
 % 
-S_filter(2:tissue_svd_cutoff,:) = 0;
+
+tissue_svd_cutoff = 15;
+noise_svd_cutoff = 30;
+% 
+S_filter(1:tissue_svd_cutoff,:) = 0;
 S_filter(noise_svd_cutoff:end,:) = 0;
 
 filtered_flat_frame = U*S_filter*V';
@@ -46,7 +49,7 @@ processed_frame_array = uint8(zeros(size(filtered_frame_array)));
 filtered_image = zeros(image_size);
 filtered_forces_images = uint8(zeros([image_size, frame_count]));
 
-dr = 35; power_thr = 200;
+dr = 45; power_thr = 2000;
 
 for f=1:frame_count
     filtered_forces_image = zeros(image_size);
@@ -57,26 +60,29 @@ for f=1:frame_count
         filtered_image = filtered_image + current_image;
         filtered_forces_image = filtered_forces_image + current_image; 
 
-        current_image = uint8((process_volume(current_image,dr,power_thr,false) + dr) *255/dr);
-        processed_frame_array(:,:,i) = current_image;
+        current_image = uint8((process_volume(current_image,dr,power_thr,false) + dr) *255/dr).';
+        processed_frame_array(:,:,i) = current_image.';
     end
     
-    filtered_forces_images(:,:,f) = uint8((process_volume(filtered_forces_image,dr) + dr) *255/dr);
+    filtered_forces_images(:,:,f) = uint8((process_volume(filtered_forces_image,dr) + dr) *255/dr).';
 end
 %%
 
 % processed_frame_array = uint8(process_volume(filtered_frame_array,dr,power_thr,true)*255);
-processed_image = process_volume(filtered_image,40);
+% processed_image = process_volume(filtered_image,40);
 
 % figure();imagesc(processed_image);colormap gray; axis image;
 
-view_frame = 10;
-frame_range = (1:readi_group_count) + (view_frame - 1) * readi_group_count; 
+% view_frame = 10;
+% frame_range = (1:readi_group_count) + (view_frame - 1) * readi_group_count; 
 
-implay(processed_frame_array,4*8);
+% implay(processed_frame_array,4*8);
 
 % implay(processed_frame_array(:,:,frame_range),2);
 
 % implay(readi_compare_array,4);
 % 
 % implay(filtered_forces_images,2);
+
+%%
+frame_count = frame_count_real;

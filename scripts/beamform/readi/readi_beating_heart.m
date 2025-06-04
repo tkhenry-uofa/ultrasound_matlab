@@ -30,7 +30,7 @@ transmit_count = single(bp.dec_data_dim(3));
 fc = bp.center_frequency;
 fs = bp.sampling_frequency;
 
-tx_region = 3/1000; % How far down to crop to avoid hearing the transmit pulse
+tx_region = 0/1000; % How far down to crop to avoid hearing the transmit pulse
 [frame_data, bp.rf_raw_dim] = crop_and_blank_tx(frame_data, bp, tx_region);
 
 
@@ -39,7 +39,7 @@ tx_region = 3/1000; % How far down to crop to avoid hearing the transmit pulse
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 volume_ranges = [-40, 40; % X
                   0,  0; % Y
-                  30, 120] / 1000; % Z
+                  30, 100] / 1000; % Z
 
 lateral_resolution = 0.0002;
 axial_resolution = lateral_resolution;

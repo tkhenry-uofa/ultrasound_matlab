@@ -35,7 +35,8 @@ function bp = load_and_parse_bp(path)
     
 
     %% Tail Properties    
-    bp.readi_group_count = 0;
+    bp.readi_group_count = 1;
+    % bp.readi_group_size = 128;
     bp.readi_group_id = 0;
 
 

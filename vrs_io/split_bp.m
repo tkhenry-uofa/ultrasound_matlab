@@ -23,7 +23,7 @@ function [head, ui, tail, arrays] = split_bp(bp)
     ui.f_number              = bp.f_number;
 
     % --- Tail ---
-    tail.readi_group_size   = bp.readi_group_size;
+    tail.readi_group_size   = 0;
     tail.readi_group_id     = bp.readi_group_id;
 
     % --- Arrays ---

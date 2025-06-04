@@ -33,7 +33,7 @@ function [scan_lines, rx_element_locs, signal_length] = aquisition_simulation(co
 
     % We need to sum up each column, (rows are biased)
     % calc_scat output is sequential rows back to front
-    if config.sequence == SequenceType.Hercules || config.sequence == SequenceType.Hercforce
+    if config.sequence == SequenceType.HERCULES
         
         scan_lines = zeros(signal_length,config.rows);
         for i=1:config.cols
@@ -48,27 +48,6 @@ function [scan_lines, rx_element_locs, signal_length] = aquisition_simulation(co
         ending_loc = transmit_no * config.cols;
 
         rx_element_locs = rx_element_locs_full(:, starting_loc:ending_loc);
-
-        % Now sum up each row, (rows are biased)
-        if config.sequence == SequenceType.Hercforce
-            
-            row_lines = zeros(signal_length,config.cols);
-            for i=1:config.rows
-                start_channel = (i-1) * config.cols + 1;
-                end_channel = i * config.cols;
-                row_lines(:,i) = sum(all_scans(:, start_channel:end_channel), 2);
-            end
-
-            scan_lines = [scan_lines, row_lines];
-
-            % When decoded these will be the elements of the T'th column (left to right)
-
-            starting_loc = transmit_no;
-            ending_loc = config.cols * (config.rows - 1) + transmit_no;
-    
-            rx_element_locs_cols = rx_element_locs_full(:, starting_loc:config.cols:ending_loc);
-            rx_element_locs = [rx_element_locs, rx_element_locs_cols ];
-        end
     else
         scan_lines = all_scans;
         rx_element_locs = rx_element_locs_full;

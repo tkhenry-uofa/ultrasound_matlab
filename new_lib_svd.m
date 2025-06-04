@@ -3,13 +3,17 @@ clear all;
 addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\client_lib\output")
 addpath('C:\Users\tkhen\source\repos\ornot\core\lib');
 
+if isempty(matlab.project.currentProject)
+    proj = openProject("../Ultrasound-Beamforming/Ultrasound-Beamforming.prj");
+end
+
 data_path_root   = "vrs_data/readi/beating_heart/";
 
 % dataset_name = "250521_MN32-5_beating_heart_static_FORCES-TxColumn";
 % dataset_name = "250521_MN32-5_beating_heart_static_FORCES-TxRow";
-% dataset_name = "250521_MN32-5_beating_heart_FORCES-TxColumn";
-dataset_name = "250521_MN32-5_beating_heart_FORCES-TxRow";
-data_file_range = 0:0;
+dataset_name = "250521_MN32-5_beating_heart_FORCES-TxColumn";
+% dataset_name = "250521_MN32-5_beating_heart_FORCES-TxRow";
+data_file_range = 0:15;
 
 data_path = data_path_root + dataset_name + "/";
 params_path = data_path + dataset_name + ".bp";
@@ -28,17 +32,17 @@ fs = bp.sampling_frequency;
 tx_region = 0/1000; % How far down to crop to avoid hearing the transmit pulse
 [frame_data, bp.rf_raw_dim] = crop_and_blank_tx(frame_data, bp, tx_region);
 
-bp.data_type = int32(BeamformerDataType.I16); % int16
+bp.data_type = 1; % int16
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Volume Setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-volume_ranges = [-20, 20; % X
+volume_ranges = [-40, 40; % X
                   0,  0; % Y
-                  50, 100] / 1000; % Z
+                  30, 110] / 1000; % Z
 
-lateral_resolution = 0.0005;
+lateral_resolution = 0.0002;
 axial_resolution = lateral_resolution;
 
 bp.f_number = 1.0;
@@ -86,27 +90,33 @@ raw_images = cell(size(readi_group_data));
 for f = 1:frame_count
     readi_bp.readi_group_id = 0;
     for g = 1:readi_group_count
-        fprintf("Beamforming Image %d\n", g );
-        raw_image = cuda_new_lib(readi_group_data{f,g}, readi_bp);
-        fprintf("Done\n");
+        fprintf("Frame %d, Image %d\n", f, g );
+        % try
+            raw_image = cuda_new_lib(readi_group_data{f,g}, readi_bp);
+        fprintf("\n\n");
         raw_images{f,g} = raw_image;
         readi_bp.readi_group_id = readi_bp.readi_group_id + 1;
     end
     
 end
 
-if true && libisloaded('cuda_transfer_matlab'), unloadlibrary('cuda_transfer_matlab'); end
 
 fprintf("Beamforming Complete\n");
 
-% clear("readi_group_data");
+clear("readi_group_data");
+
+%% Motion compensation
+
+low_res_array = raw_images;
+
+svd_test;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Post processing 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-plot_frame = 1;
+plot_frame = 8;
 dynamic_range = 50;
 threshold = 300;
 power_image = false;
@@ -117,7 +127,7 @@ processed_image_array = cell(1,readi_group_count);
 forces_image_raw = zeros(image_dims);
 
 for g = 1:readi_group_count
-    raw_image = raw_images{plot_frame,g};
+    raw_image = filtered_frame_cell{plot_frame,g};
     processed_image = process_volume(raw_image,dynamic_range,threshold,power_image).';
     processed_image_array{g} = processed_image;
     forces_image_raw = forces_image_raw + raw_image;

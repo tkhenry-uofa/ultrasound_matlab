@@ -11,7 +11,7 @@ end
 
 data_path_root   = "vrs_data/readi/stage_motion/";
 dataset_name = "250423_MN32-5_reso_motion_FORCES-TxColumn";
-data_file_range = 0:15;
+data_file_range = 0:0;
 
 data_path = data_path_root + dataset_name + "/";
 params_path = data_path + dataset_name + ".bp";
@@ -70,6 +70,17 @@ cs_stages = uint8([
 % 	OGLShaderStage.DAS
 % ]);
 
+% cs_stages = uint8([
+% 	OGLShaderStage.DECODE, ...
+%     OGLShaderStage.CUDA_HILBERT, ...
+% 	OGLShaderStage.DAS
+% ]);
+
+% cs_stages = uint8([
+% 	OGLShaderStage.DECODE, ...
+% 	OGLShaderStage.DAS
+% ]);
+
 
 
 if ~libisloaded('ogl_beamformer_lib'), loadlibrary('ogl_beamformer_lib'); end
@@ -79,13 +90,13 @@ fprintf("Setting params\n")
 timeout_ms = 0;
 
 %% Sending Params
-calllib('ogl_beamformer_lib', 'beamformer_push_channel_mapping', arrays.channel_mapping, numel(arrays.channel_mapping), timeout_ms);
-calllib('ogl_beamformer_lib', 'beamformer_push_sparse_elements', arrays.sparse_elements, numel(arrays.sparse_elements), timeout_ms);
-calllib('ogl_beamformer_lib', 'beamformer_push_focal_vectors', arrays.focal_vectors, transmit_count, timeout_ms);
-
 calllib('ogl_beamformer_lib', 'beamformer_push_parameters_ui', bp_ui, timeout_ms);
 calllib('ogl_beamformer_lib', 'beamformer_push_parameters_head', bp_head, timeout_ms);
 calllib('ogl_beamformer_lib', 'set_beamformer_pipeline', cs_stages, numel(cs_stages));
+
+calllib('ogl_beamformer_lib', 'beamformer_push_channel_mapping', arrays.channel_mapping, numel(arrays.channel_mapping), timeout_ms);
+calllib('ogl_beamformer_lib', 'beamformer_push_sparse_elements', arrays.sparse_elements, numel(arrays.sparse_elements), timeout_ms);
+calllib('ogl_beamformer_lib', 'beamformer_push_focal_vectors', arrays.focal_vectors, transmit_count, timeout_ms);
 
 %% Sending data
 
