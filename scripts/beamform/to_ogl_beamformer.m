@@ -9,8 +9,8 @@ if isempty(matlab.project.currentProject)
     proj = openProject("../Ultrasound-Beamforming/Ultrasound-Beamforming.prj");
 end
 
-data_path_root   = "vrs_data/readi/stage_motion/";
-dataset_name = "250423_MN32-5_reso_motion_FORCES-TxColumn";
+data_path_root   = "vrs_data/tiled_troubleshoot/";
+dataset_name = "250605_Tiled1_beating_heart_FORCES-TxRow";
 data_file_range = 0:0;
 
 data_path = data_path_root + dataset_name + "/";
@@ -90,13 +90,19 @@ fprintf("Setting params\n")
 timeout_ms = 0;
 
 %% Sending Params
-calllib('ogl_beamformer_lib', 'beamformer_push_parameters_ui', bp_ui, timeout_ms);
 calllib('ogl_beamformer_lib', 'beamformer_push_parameters_head', bp_head, timeout_ms);
+result_ui = calllib('ogl_beamformer_lib', 'beamformer_get_last_error');
 calllib('ogl_beamformer_lib', 'set_beamformer_pipeline', cs_stages, numel(cs_stages));
+result_pipeline = calllib('ogl_beamformer_lib', 'beamformer_get_last_error');
 
 calllib('ogl_beamformer_lib', 'beamformer_push_channel_mapping', arrays.channel_mapping, numel(arrays.channel_mapping), timeout_ms);
+result_mapping = calllib('ogl_beamformer_lib', 'beamformer_get_last_error');
+
 calllib('ogl_beamformer_lib', 'beamformer_push_sparse_elements', arrays.sparse_elements, numel(arrays.sparse_elements), timeout_ms);
+result_sparse = calllib('ogl_beamformer_lib', 'beamformer_get_last_error');
+
 calllib('ogl_beamformer_lib', 'beamformer_push_focal_vectors', arrays.focal_vectors, transmit_count, timeout_ms);
+result_focus = calllib('ogl_beamformer_lib', 'beamformer_get_last_error');
 
 %% Sending data
 
@@ -109,7 +115,9 @@ for i = 1:frame_count
 
     frame_data = frame_data_cell{i};
     if calllib('ogl_beamformer_lib', 'beamformer_push_data', frame_data, data_size, timeout_ms)
+        result_data = calllib('ogl_beamformer_lib', 'beamformer_get_last_error');
         calllib('ogl_beamformer_lib', 'beamformer_start_compute', image_plane);
+        result_compute = calllib('ogl_beamformer_lib', 'beamformer_get_last_error');
     else
         warning("OGL Beamfroming Push Data Failed");
     end

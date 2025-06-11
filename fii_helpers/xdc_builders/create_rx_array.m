@@ -9,7 +9,7 @@ function [rx_array, rx_subs] = create_rx_array(config, transmit_no,active_rx_els
         rx_subs = 32;
         % Just make a long 1D array because all the rows are active
         % anyway
-        rx_array = xdc_linear_array(config.cols, config.width, config.pitch * config.rows, ...
+        rx_array = xdc_linear_array(config.cols, config.width, config.pitch * 32, ...
             config.kerf, 1, rx_subs, [0 0 10000000000000]);
     else
         rx_array = xdc_2d_array(config.cols,config.rows,config.width,config.width,...
@@ -27,6 +27,8 @@ function [rx_array, rx_subs] = create_rx_array(config, transmit_no,active_rx_els
         ele_apodization(rx_array,(1:(config.rows*config.cols)).',apo_pattern);
         
     end
+
+    % show_xdc_mod(rx_array,"apo")
 
     xdc_impulse(rx_array,config.imp);
 end

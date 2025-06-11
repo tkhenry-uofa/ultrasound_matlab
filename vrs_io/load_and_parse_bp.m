@@ -39,7 +39,7 @@ function bp = load_and_parse_bp(path)
     % bp.readi_group_size = 128;
     bp.readi_group_id = 0;
 
-    bp.data_type = int32(BeamformerDataType.I16);
+    bp.data_type = int32(CudaDataType.I16);
 
     %% Arrays
     bp.channel_mapping  = raw_bp.channel_mapping;

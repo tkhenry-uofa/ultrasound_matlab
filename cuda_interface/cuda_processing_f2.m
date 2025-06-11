@@ -1,5 +1,5 @@
 function low_res_array = cuda_processing_f2(rf_data,tx_config,vol_config,plane)
-    
+    addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\client_lib\output")
     data_size = size(rf_data);
     sample_count = data_size(1);
     channel_count = data_size(2);
@@ -34,6 +34,12 @@ function low_res_array = cuda_processing_f2(rf_data,tx_config,vol_config,plane)
     end
 
     bp.data_type = int32(BeamformerDataType.F32);
+
+    if isfield(tx_config,"walsh_ordering")&& tx_config.walsh_ordering
+        bp.readi_ordering = int32(ReadiOrdering.WALSH);
+    else
+        bp.readi_ordering = int32(ReadiOrdering.HADAMARD);
+    end
 
     %% UI Properties
 

@@ -7,9 +7,9 @@ if isempty(matlab.project.currentProject)
     proj = openProject("../Ultrasound-Beamforming/Ultrasound-Beamforming.prj");
 end
 
-data_path_root   = "vrs_data/match_filter_test/";
+data_path_root   = "vrs_data/readi/beating_heart/";
 
-dataset_name = "250514_MN32-5_reso_FORCES-TxColumn";
+dataset_name = "250521_MN32-5_beating_heart_FORCES-TxRow";
 data_file_range = 0:0;
 frame_count = length(data_file_range);
 
@@ -47,30 +47,28 @@ bp.f_number = 0.5;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Readi data prep
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-readi_group_count = 16;
+readi_group_count = 8;
 
 [readi_group_data, readi_bp] = readi_data_breakup(frame_data, bp, readi_group_count);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Beamforming
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if ~libisloaded('cuda_transfer'), loadlibrary('cuda_transfer'); end
-
 raw_images = cell(size(readi_group_data));
 
 for f = 1:frame_count
     readi_bp.readi_group_id = 0;
     for g = 1:readi_group_count
+        tic;
         fprintf("Beamforming Image %d, Group %d\n", f, g);
         raw_image = cuda_beamform(readi_group_data{f,g}, readi_bp);
-        fprintf("Done\n");
+        toc
         raw_images{f,g} = raw_image;
         readi_bp.readi_group_id = readi_bp.readi_group_id + 1;
     end
 end
 
-if true, unloadlibrary('cuda_transfer'); end
+if true, unloadlibrary('cuda_transfer_matlab'); end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

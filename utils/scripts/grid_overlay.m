@@ -1,12 +1,12 @@
 % Parameters
-patch_size = 4;                             % Grid spacing in pixels
+patch_size = 1;                             % Grid spacing in pixels
 
 image_id = 1;
 
 figure();
 
 % subplot 121
-img = processed_low_res{image_id};
+img = generate_walsh(32);
 imagesc(img); axis("image"); hold on;
 
 

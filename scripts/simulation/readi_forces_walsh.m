@@ -57,7 +57,7 @@ emission_time = (1:length(emission))/fs;
 returned_wave = conv(emission, impulse_response);
 returned_time = length(returned_wave)/fs;
 
-pulse_delay = length(emission)/(2*fs);
+pulse_delay = length(returned_wave)/(2*fs);
 
 %% Tx delays and apodizations
 
@@ -70,11 +70,14 @@ discard_transmits = [];
 
 prf = c / (src_loc(3) * 2);
 
-% tx_apo = hamming(column_count)*ones(1,row_count);
-% tx_apo = ones(column_count,1) * hamming(row_count)';
-tx_apo = hamming(column_count)*hamming(row_count)';
-% tx_apo = ones(column_count, row_count);
+half_hamming = zeros(1,column_count);
+half_hamming(33:96) = hamming(64);
+
+tx_apo = ones(row_count,column_count);
+% tx_apo = hamming(column_count)*hamming(row_count).';
+% tx_apo = hamming(column_count)*half_hamming;
 no_transmits = 128;
+walsh_ordering = true;
 
 tx_config = struct(...
     'f0', f0,...
@@ -103,7 +106,7 @@ tx_config = struct(...
     'no_transmits',no_transmits,...
     'cross_offset',0,...
     'curve_radius',0,...
-    'print',true);
+    'walsh_ordering',walsh_ordering);
 
 [tx_array, tx_config] = create_tx_array(tx_config, 2);
 % These angles describe the region hit by the diverging wave
@@ -122,21 +125,10 @@ tx_config.print = false;
 % show_xdc_mod(tx_array,"apo")
 
 %% Point scatter generation
-% [points, amps] = point_grid( [-20:5:20]/1000, [0]/1000, [5:5:100]/1000);
-
-% [points, amps] = cyst2x2([-10, 0, 10]/1000, [-0.5, 0.5]/1000,[70, 80, 90]/1000,15000,2.5/1000);
-% [points, amps] = single_cyst(150000, [-25, 25]/1000,[-1, 1]/1000,[60, 90]/1000, 2/1000);
-
-% scatter3(points(:,1),points(:,2),points(:,3), 10, 'filled')
-
-% points = point_grid( [-2.5]/1000, [0]/1000, [50]/1000);
 
 point1 = [0, 0, 55]/1000;
-% point2 = [5, 0, 47.5]/1000;
-% point3 = [0, 0, 45]/1000;
-% point4 = [-1.8, 0, 53.2]/1000;
 
-% amps = [1;1;1;1];
+
 amps = 1;
 
 point_cell = cell(1,128);
@@ -173,6 +165,13 @@ for T = 1:tx_config.no_transmits
     all_scans{T} = all_scans{T} ./ max_value;
 end
 
+%%
+% sample = all_scans{1};
+% sample = sample(:,64);
+% figure();
+% plot(sample(3750:end));
+% title("10 mm rx aperture")
+
 
 %% Processing
 
@@ -199,15 +198,15 @@ y_range = [0, 0]/1000;
 z_range = [45, 65]/1000;
 
 
-resolution = 0.0002; % Spatial voxel size
+resolution = 0.0001; % Spatial voxel size
 
 vol_config = volume_config(x_range,y_range,z_range,resolution);
 
-vol_config.f_number = 0;
+vol_config.f_number = 1;
 
 %% Readi Beamforming
 tic;
-readi_group_count = 16;
+readi_group_count = 4;
 
 vol_config.readi_group_count = readi_group_count;
 readi_group_size = row_count/readi_group_count;
@@ -236,6 +235,8 @@ rows = vol_config.z_count;
 cols = vol_config.x_count;
 
 
+
+
 %% Processing
 dynamic_range = 50;
 
@@ -252,10 +253,10 @@ readi_image = process_volume(readi_image_raw,dynamic_range);
 %% Plotting
 
 figure()
-plot_bmode(readi_image, x_range, z_range, "FORCES Image");
+plot_bmode(readi_image, x_range, z_range, "Walsh FORCES");
 colorbar;
 
-plot_image_grid(processed_low_res, [4 4], x_range, z_range, "READI Low Resolution Images")
+plot_image_grid(processed_low_res, [2 2], x_range, z_range, "Walsh Low Res")
 
 %% Export data
 % filepath = "C:\Users\tkhen\OneDrive\Documents\MATLAB\lab\real_data\field_ii\readi\cyst_sim_move.mat";

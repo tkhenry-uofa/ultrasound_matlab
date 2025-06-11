@@ -1,6 +1,5 @@
 clear all;
 
-addpath("C:\Users\tkhen\source\repos\cuda_toolkit\test_app\matlab_lib")
 addpath('C:\Users\tkhen\source\repos\ornot\core\lib');
 
 if isempty(matlab.project.currentProject)
@@ -14,7 +13,7 @@ data_path_root   = "vrs_data/readi/beating_heart/";
 % dataset_name = "250521_MN32-5_beating_heart_FORCES-TxColumn";
 dataset_name = "250521_MN32-5_beating_heart_FORCES-TxRow";
 
-data_file_range = 0:15;
+data_file_range = 0:1;
 
 data_path = data_path_root + dataset_name + "/";
 params_path = data_path + dataset_name + ".bp";
@@ -81,6 +80,6 @@ figure();
 plot_bmode(processed_image, x_range, z_range);
 colorbar;
 
-plot_image_grid(processed_image_array, [4, 4], x_range, z_range, "Sequence");
+% plot_image_grid(processed_image_array, [4, 4], x_range, z_range, "Sequence");
 
 

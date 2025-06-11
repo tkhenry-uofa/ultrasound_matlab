@@ -1,5 +1,9 @@
-function animate_frames(frame_cell)
+function animate_frames(frame_cell, frame_rate)
 
+    if(~exist("frame_rate", "var"))
+        frame_rate = 4;
+    end
+    
     frame_count = numel(frame_cell);
     image_size = size(frame_cell{1});
     
@@ -13,6 +17,6 @@ function animate_frames(frame_cell)
         frame_array(:,:,i) = uint8((frame + dr) * 255/dr);
     end
 
-    implay(frame_array,4);
+    implay(frame_array,frame_rate);
 
 end

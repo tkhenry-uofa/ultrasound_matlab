@@ -3,6 +3,9 @@ function plot_image_grid(images, subplot_dims, x, z, title_str)
     figure();
     image_count = length(images);
 
+    row_count = subplot_dims(1);
+    col_count = subplot_dims(2);
+
     
     t = tiledlayout(subplot_dims(1), subplot_dims(2), 'TileSpacing', 'compact');
     for i = 1:image_count

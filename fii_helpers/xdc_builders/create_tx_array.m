@@ -26,7 +26,12 @@ function [tx_array, config] = create_tx_array(config, transmit_no)
 
     encoded_sequences = [SequenceType.FORCES, SequenceType.UFORCES];
     if(ismember(config.sequence, encoded_sequences))
-        H = hadamard(config.no_transmits);
+        if isfield(config,"walsh_ordering")&& config.walsh_ordering
+            H = generate_walsh(config.no_transmits);
+        else
+            H = hadamard(config.no_transmits);
+        end
+        
         tx_pattern = H(:,transmit_no);
 
         apo = apo .* tx_pattern;
@@ -38,7 +43,7 @@ function [tx_array, config] = create_tx_array(config, transmit_no)
     end
 
     ele_apodization(tx_array,(1:element_count)',apo_array);
-    set_tx_delays(tx_array,config.src,config.transmit,config.rows,config.cols,config.c,sub_element_count,config.print);
+    set_tx_delays(tx_array,config.src,config.transmit,config.rows,config.cols,config.c,sub_element_count);
 
     element_locs = xdc_get(tx_array);
     element_locs = element_locs(24:25, 1:sub_element_count:end);

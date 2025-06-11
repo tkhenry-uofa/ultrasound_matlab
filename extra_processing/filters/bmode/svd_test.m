@@ -31,10 +31,10 @@ S_filter = S;
 % noise_svd_cutoff = 80;
 % 
 
-tissue_svd_cutoff = 15;
-noise_svd_cutoff = 30;
+tissue_svd_cutoff = 50;
+noise_svd_cutoff = 4;
 % 
-S_filter(1:tissue_svd_cutoff,:) = 0;
+% S_filter(1:tissue_svd_cutoff,:) = 0;
 S_filter(noise_svd_cutoff:end,:) = 0;
 
 filtered_flat_frame = U*S_filter*V';
@@ -60,11 +60,11 @@ for f=1:frame_count
         filtered_image = filtered_image + current_image;
         filtered_forces_image = filtered_forces_image + current_image; 
 
-        current_image = uint8((process_volume(current_image,dr,power_thr,false) + dr) *255/dr).';
-        processed_frame_array(:,:,i) = current_image.';
+        current_image = uint8((process_volume(current_image,dr,power_thr,false) + dr) *255/dr);
+        processed_frame_array(:,:,i) = current_image;
     end
     
-    filtered_forces_images(:,:,f) = uint8((process_volume(filtered_forces_image,dr) + dr) *255/dr).';
+    filtered_forces_images(:,:,f) = uint8((process_volume(filtered_forces_image,dr) + dr) *255/dr);
 end
 %%
 
@@ -76,12 +76,15 @@ end
 % view_frame = 10;
 % frame_range = (1:readi_group_count) + (view_frame - 1) * readi_group_count; 
 
-% implay(processed_frame_array,4*8);
 
 % implay(processed_frame_array(:,:,frame_range),2);
 
 % implay(readi_compare_array,4);
 % 
+
+
+implay(processed_frame_array,4*8);
+
 % implay(filtered_forces_images,2);
 
 %%
